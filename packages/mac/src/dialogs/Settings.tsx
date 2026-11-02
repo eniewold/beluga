@@ -13,6 +13,7 @@ import { CopyCommand, LOCAL_MODELS_ID, useAgents } from '../onboarding/AgentsSte
 import { FIX_LABEL } from '../onboarding/agent-setup.js';
 import { APP_VERSION } from '../lib/boot.js';
 import { revealInFinder } from '../lib/files.js';
+import { underHome } from '../lib/home-paths.js';
 import { type SettingsPane, useApi, useApp, useBeluga, useUi } from '../lib/beluga.js';
 import { ACCENTS, type Accent, setPrefs, useChosenPrefs, usePrefs } from '../lib/prefs.js';
 import { EnvironmentSettings } from './EnvironmentSettings.js';
@@ -568,7 +569,7 @@ function People() {
 function About() {
   const { client, ui } = useBeluga();
   const home = useApp((st) => st.home);
-  const logPath = `${home}/.beluga/logs/daemon.log`;
+  const logPath = underHome(home, '.beluga', 'logs', 'daemon.log');
   return (
     <>
       <Group>

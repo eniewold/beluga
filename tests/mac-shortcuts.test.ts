@@ -22,6 +22,7 @@ import {
   searchShortcuts,
   shortcutFor,
   unassign,
+  echoGuard,
 } from '../packages/mac/src/lib/shortcuts-model.js';
 import { parseAccel } from '../packages/mac/src/lib/dictation-model.js';
 
@@ -173,5 +174,46 @@ describe('changing them', () => {
     const b = bindingsOf({});
     expect(searchShortcuts(b, 'commit').map((d) => d.id)).toEqual(['ws-commit']);
     expect(searchShortcuts(b, '⌥⌘↑').map((d) => d.id)).toContain('ws-prev');
+  });
+});
+
+describe('echoGuard: a shortcut runs once however it arrives', () => {
+  const guard = (): { once: ReturnType<typeof echoGuard>; tick: (ms: number) => void; runs: string[] } => {
+    let t = 1000;
+    const runs: string[] = [];
+    const once = echoGuard(300, () => t);
+    return { once, tick: (ms) => (t += ms), runs };
+  };
+
+  it('the menu bar echoing a key press (either order) runs once', () => {
+    const { once, tick, runs } = guard();
+    once('key', 'zoom-in', () => runs.push('a'));
+    tick(10);
+    once('menu', 'zoom-in', () => runs.push('b'));
+    tick(10);
+    once('menu', 'zoom-out', () => runs.push('c'));
+    tick(10);
+    once('key', 'zoom-out', () => runs.push('d'));
+    expect(runs).toEqual(['a', 'c']);
+  });
+
+  it('the same menu click delivered twice (Windows: Help › Open the Log) runs once', () => {
+    const { once, tick, runs } = guard();
+    once('menu', 'help-log', () => runs.push('a'));
+    tick(5);
+    once('menu', 'help-log', () => runs.push('b'));
+    expect(runs).toEqual(['a']);
+    tick(400);
+    once('menu', 'help-log', () => runs.push('c'));
+    expect(runs).toEqual(['a', 'c']);
+  });
+
+  it('two key presses in a row are two, and other ids are not held up', () => {
+    const { once, tick, runs } = guard();
+    once('key', 'zoom-in', () => runs.push('a'));
+    tick(50);
+    once('key', 'zoom-in', () => runs.push('b'));
+    once('menu', 'help-log', () => runs.push('c'));
+    expect(runs).toEqual(['a', 'b', 'c']);
   });
 });

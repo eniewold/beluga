@@ -548,3 +548,27 @@ export function searchShortcuts(bindings: Bindings, q: string): ShortcutDef[] {
   if (!t) return [...SHORTCUTS];
   return SHORTCUTS.filter((d) => `${d.label} ${d.section} ${d.hint ?? ''} ${(bindings[d.id] ?? []).map(chordLabel).join(' ')}`.toLowerCase().includes(t));
 }
+
+/* ---------- Once, from the window or the menu bar ---------- */
+
+export type EchoSource = 'key' | 'menu';
+
+/** How long after a shortcut ran its echo can still arrive. */
+export const ECHO_MS = 300;
+
+/**
+ * A shortcut runs once, however many ways it arrives: a key press can reach both the window and
+ * the menu bar (its item has the same key), in either order, and the menu bar can deliver one click
+ * twice (Windows). Whichever comes second within `echoMs` is the echo. Two key presses in a row are
+ * two (you pressed twice: ⌘+ ⌘+ zooms twice).
+ */
+export function echoGuard(echoMs = ECHO_MS, now: () => number = Date.now): (by: EchoSource, id: string, run: () => void) => void {
+  const ran = new Map<string, { readonly by: EchoSource; readonly at: number }>();
+  return (by, id, run) => {
+    const last = ran.get(id);
+    const at = now();
+    if (last && at - last.at < echoMs && (last.by !== by || by === 'menu')) return;
+    ran.set(id, { by, at });
+    run();
+  };
+}
