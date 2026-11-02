@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { getPrefs, subscribePrefs } from './prefs.js';
-import { type Bindings, type KeyPress, bindingsOf, chordOfAccel, keysLabel, menuAccel, menuKeys, pressed } from './shortcuts-model.js';
+import { type Bindings, type KeyPress, bindingsOf, chordOfAccel, echoGuard, keysLabel, menuAccel, menuKeys, pressed } from './shortcuts-model.js';
 
 /**
  * Your keyboard shortcuts in this window (BLG-289): the keys each shortcut has now (Settings ›
@@ -53,17 +53,8 @@ export const isRecording = (): boolean => recording;
 /* ---------- Once, from the window or the menu bar ---------- */
 
 // A key press can reach both the window and the menu bar (its item has the same key), in either
-// order: it runs once. Whichever comes second within a moment is the echo.
-const ran = new Map<string, { readonly by: 'key' | 'menu'; readonly at: number }>();
-const ECHO_MS = 300;
-
-function once(by: 'key' | 'menu', id: string, run: () => void): void {
-  const last = ran.get(id);
-  const now = Date.now();
-  if (last && last.by !== by && now - last.at < ECHO_MS) return;
-  ran.set(id, { by, at: now });
-  run();
-}
+// order, and a menu click can be delivered twice (Windows): it runs once (see echoGuard).
+const once = echoGuard();
 export const fromKey = (id: string, run: () => void): void => once('key', id, run);
 export const fromMenu = (id: string, run: () => void): void => (recording ? undefined : once('menu', id, run));
 

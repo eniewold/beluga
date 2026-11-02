@@ -3,6 +3,7 @@ import { peerName } from '@beluga/core/store.js';
 import { shareNameOf } from '@beluga/shared/share-names.js';
 import type { SocketClient } from '@beluga/ipc/socket-client.js';
 import { inApp } from './boot.js';
+import { parentOf } from './home-paths.js';
 
 /**
  * Files you see in Beluga, the Mac way: where one is on this Mac (to show it in Finder or copy
@@ -29,8 +30,6 @@ export function mentionOf(state: AppState, at: Location): string {
   if (ws && at.owner === state.selfId && at.share === shareNameOf(ws)) return at.path || '.';
   return `${peerName(state, at.owner)}:${at.share}/${at.path}`;
 }
-
-const parentOf = (p: string): string => p.replace(/\/[^/]*\/?$/, '') || '/';
 
 /** Show a file of yours selected in Finder (in development: open its folder). */
 export async function revealInFinder(client: SocketClient, path: string): Promise<void> {

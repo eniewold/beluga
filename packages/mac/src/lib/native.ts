@@ -21,6 +21,7 @@ import { newChatProject } from './project-home.js';
 import { type MenuBarCounts, SPOUT_EVERY_MS, spoutStep, trayTitle } from '../menubar/menubar-look.js';
 import { shownState } from '../network/net-model.js';
 import { SHOW_TILE, boardLinkOf } from './widget-links.js';
+import { underHome } from './home-paths.js';
 
 const isCommand = (id: string): id is CommandId => (COMMAND_IDS as readonly string[]).includes(id);
 
@@ -112,7 +113,7 @@ export function runMenuItem(id: string, client: SocketClient, ui: UiStore, actio
       zoom(id.slice('zoom-'.length) as 'in' | 'out' | 'reset');
       return;
     case 'help-log':
-      return void client.api.local.openFolder(`${state.home}/.beluga/logs`);
+      return void client.api.local.openFolder(underHome(state.home, '.beluga', 'logs'));
   }
 }
 
